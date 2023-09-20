@@ -12,12 +12,13 @@ export type EmailValidationRequestType = {
   result: string;
 };
 export type EmailValidationRequestContextType = {
-  addRequest?: (_emailRequest: EmailValidationRequestType) => void;
+  addRequest?: (emailRequest: EmailValidationRequestType) => void;
   emailValidationRequests: EmailValidationRequestType[] | [];
 };
 
 export const TrackEmailValidationContext =
   createContext<EmailValidationRequestContextType>({
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     addRequest: (_emailRequest: EmailValidationRequestType) => {},
     emailValidationRequests: [],
   });

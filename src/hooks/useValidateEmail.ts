@@ -1,4 +1,8 @@
 import { useRef, useState } from 'react';
+import {
+  EmailValidationRequestType,
+  useTrackEmailValidationContext,
+} from '../contexts/TrackEmailValidationContextProvider';
 import fetchRestEndpoint from '../utils/fetchEndpoint';
 
 const DEFAULT_DISPLAY_RESULTS = {
@@ -18,6 +22,7 @@ type ValidationResultsType = {
 } | null;
 
 export default function useValidateEmail() {
+  const { addRequest } = useTrackEmailValidationContext();
   const [error, setError] = useState('');
   const [displayResults, setDisplayResults] = useState<DisplayResultsType>(
     DEFAULT_DISPLAY_RESULTS,
@@ -26,42 +31,64 @@ export default function useValidateEmail() {
 
   const previousEmail = useRef('');
 
+  function trackEmailValidationRequest(
+    emailRequest: EmailValidationRequestType,
+  ) {
+    if (addRequest) {
+      addRequest(emailRequest);
+    }
+  }
+
   function resetErrorsAndDisplayResults(displayResults: DisplayResultsType) {
     setError('');
     setDisplayResults(displayResults);
+    return displayResults;
   }
 
   function formatValidationResults(validationResults: ValidationResultsType) {
     const { disposable, dns, format } = validationResults || {};
+    let resultsText = '';
 
     switch (true) {
       case !format:
-        return setError('Invalid email format.');
+        resultsText = 'Invalid email format.';
+        setError(resultsText);
+        return resultsText;
       case disposable:
-        return resetErrorsAndDisplayResults({
+        resultsText = 'Is a disposable email.';
+        resetErrorsAndDisplayResults({
           color: 'warning',
-          helperText: 'Is a disposable email.',
+          helperText: resultsText,
         });
+        return resultsText;
       case !dns:
-        return setError('Not a valid email.');
+        resultsText = 'Not a valid email.';
+        setError(resultsText);
+        return resultsText;
       case dns:
-        return resetErrorsAndDisplayResults({
+        resultsText = 'Is a valid email.';
+        resetErrorsAndDisplayResults({
           color: 'success',
-          helperText: 'Is a valid email.',
+          helperText: resultsText,
         });
+        return resultsText;
       default:
-        return resetErrorsAndDisplayResults(DEFAULT_DISPLAY_RESULTS);
+        resetErrorsAndDisplayResults(DEFAULT_DISPLAY_RESULTS);
+        return resultsText;
     }
   }
 
-  function fetchValidateEmail(email?: string) {
+  function fetchValidateEmail(email: string) {
     fetchRestEndpoint({ url: `${VALIDATE_EMAIL_API}/${email}`, mode: 'cors' })
       .then((response) => {
         setIsFetching(false);
-        formatValidationResults(response);
+        const resultsText = formatValidationResults(response);
+        trackEmailValidationRequest({ email, result: resultsText });
       })
       .catch((error) => {
-        setError('Error validating email: ' + error);
+        const errorMessage = 'Error validating email: ' + error;
+        setError(errorMessage);
+        trackEmailValidationRequest({ email, result: errorMessage });
         setIsFetching(false);
       });
   }

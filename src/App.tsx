@@ -1,6 +1,6 @@
-import * as React from "react";
-import Container from "@mui/material/Container";
+import * as React from 'react';
+import ValidateEmail from './screens/ValidateEmail';
 
 export default function App() {
-  return <Container maxWidth="sm">Hello World!</Container>;
+  return <ValidateEmail />;
 }

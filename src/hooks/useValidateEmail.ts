@@ -1,7 +1,15 @@
 import { useRef, useState } from 'react';
 import fetchRestEndpoint from '../utils/fetchEndpoint';
 
+const DEFAULT_DISPLAY_RESULTS = {
+  color: '',
+  helperText: '',
+};
 const VALIDATE_EMAIL_API = 'https://www.disify.com/api/email';
+type DisplayResultsType = {
+  color?: string;
+  helperText: string;
+};
 type ValidationResultsType = {
   disposable: boolean;
   dns: boolean;
@@ -11,17 +19,46 @@ type ValidationResultsType = {
 
 export default function useValidateEmail() {
   const [error, setError] = useState('');
+  const [displayResults, setDisplayResults] = useState<DisplayResultsType>(
+    DEFAULT_DISPLAY_RESULTS,
+  );
   const [isFetching, setIsFetching] = useState(false);
-  const [validationResults, setValidationResults] =
-    useState<ValidationResultsType>(null);
 
   const previousEmail = useRef('');
+
+  function resetErrorsAndDisplayResults(displayResults: DisplayResultsType) {
+    setError('');
+    setDisplayResults(displayResults);
+  }
+
+  function formatValidationResults(validationResults: ValidationResultsType) {
+    const { disposable, dns, format } = validationResults || {};
+
+    switch (true) {
+      case !format:
+        return setError('Invalid email format.');
+      case disposable:
+        return resetErrorsAndDisplayResults({
+          color: 'warning',
+          helperText: 'Is a disposable email.',
+        });
+      case !dns:
+        return setError('Not a valid email.');
+      case dns:
+        return resetErrorsAndDisplayResults({
+          color: 'success',
+          helperText: 'Is a valid email.',
+        });
+      default:
+        return resetErrorsAndDisplayResults(DEFAULT_DISPLAY_RESULTS);
+    }
+  }
 
   function fetchValidateEmail(email?: string) {
     fetchRestEndpoint({ url: `${VALIDATE_EMAIL_API}/${email}`, mode: 'cors' })
       .then((response) => {
         setIsFetching(false);
-        setValidationResults(response);
+        formatValidationResults(response);
       })
       .catch((error) => {
         setError('Error validating email: ' + error);
@@ -44,5 +81,10 @@ export default function useValidateEmail() {
     fetchValidateEmail(email);
   }
 
-  return { error, validateEmail, isFetching, validationResults };
+  return {
+    error,
+    validateEmail,
+    displayResults,
+    isFetching,
+  };
 }

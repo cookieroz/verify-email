@@ -7,7 +7,12 @@ import TextField from '@mui/material/TextField';
 import useValidateEmail from '../hooks/useValidateEmail';
 
 export default function ValidateEmailForm() {
-  const { error, validateEmail, isFetching } = useValidateEmail();
+  const {
+    displayResults: { color, helperText },
+    error,
+    isFetching,
+    validateEmail,
+  } = useValidateEmail();
 
   const [email, setEmail] = useState('');
 
@@ -28,7 +33,8 @@ export default function ValidateEmailForm() {
 
         <TextField
           error={!!error}
-          helperText={error}
+          helperText={error || helperText}
+          FormHelperTextProps={{ color }}
           id="validate-email-input"
           onChange={onEmailChange}
           sx={{ margin: '16px 0' }}
